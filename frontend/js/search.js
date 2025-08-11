@@ -176,27 +176,65 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (type === 'product' || type === 'both') {
+<<<<<<< HEAD
                 // Search by product name
                 const productResponse = await fetch(`${API_BASE_URL}/search/product?q=${encodeURIComponent(searchTerm)}`);
                 const productData = await productResponse.json();
                 if (productData.success && productData.data) {
+=======
+                // Search by product name with improved keyword matching
+                console.log('🔍 Searching for product with term:', searchTerm);
+                const productResponse = await fetch(`${API_BASE_URL}/search/product?q=${encodeURIComponent(searchTerm)}`);
+                const productData = await productResponse.json();
+                
+                if (productData.success && productData.data) {
+                    console.log(`✅ Product search returned ${productData.data.length} results`);
+                    if (productData.keywords) {
+                        console.log('🔑 Keywords used:', productData.keywords);
+                    }
+                    if (productData.breakdown) {
+                        console.log(`📊 Results breakdown: ${productData.breakdown.cancelled} cancelled, ${productData.breakdown.approved} approved`);
+                    }
+                    
+>>>>>>> 89a4d49 (upload project files)
                     // Remove duplicates based on notif_no
                     const existingNotifNos = new Set(results.map(r => r.notif_no));
                     const newResults = productData.data.filter(p => !existingNotifNos.has(p.notif_no));
                     results = results.concat(newResults);
+<<<<<<< HEAD
+=======
+                } else {
+                    console.log('❌ Product search failed or returned no data:', productData);
+>>>>>>> 89a4d49 (upload project files)
                 }
             }
             
             if (results.length > 0) {
                 currentResults = results.map(product => enrichProductData(product));
                 displaySearchResults(currentResults, searchTerm);
+<<<<<<< HEAD
+=======
+                
+                // Show search tip for partial matching
+                if (searchTerm.includes(' ') || searchTerm.includes('-') || searchTerm.includes(',')) {
+                    showMessage(`Found ${results.length} products. Search now supports partial word matching - you can search for any word from the product name!`, 'info');
+                } else {
+                    showMessage(`Found ${results.length} products matching "${searchTerm}".`, 'info');
+                }
+>>>>>>> 89a4d49 (upload project files)
             } else {
                 showNoResults(searchTerm);
             }
         } catch (error) {
             console.error('🚫 Search error:', error);
             console.error('🔗 API Base URL used:', API_BASE_URL);
+<<<<<<< HEAD
             showErrorMessage(`Search failed: ${error.message}. Please check if backend server is running on http://8.138.219.192:8000`);
+=======
+            showErrorMessage(`Search failed: ${error.message}. Please check if backend server is running on http://localhost:8000`);
+        } finally {
+            hideLoading();
+>>>>>>> 89a4d49 (upload project files)
         }
     }
     
@@ -349,7 +387,11 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('🚫 Filter error:', error);
             console.error('🔗 API Base URL used:', API_BASE_URL);
+<<<<<<< HEAD
             showErrorMessage(`Filter failed: ${error.message}. Please check if backend server is running on http://8.138.219.192:8000`);
+=======
+            showErrorMessage(`Filter failed: ${error.message}. Please check if backend server is running on http://localhost:8000`);
+>>>>>>> 89a4d49 (upload project files)
         }
     }
     
@@ -397,6 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function showLowRiskStatistics() {
         try {
+<<<<<<< HEAD
             // Get actual statistics from API
             const response = await fetch(`${API_BASE_URL}/filter/statistics`);
             const data = await response.json();
@@ -418,11 +461,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="filter-results">
                     <div class="results-header">
                         <h3>Low Risk Products - Count Summary</h3>
+=======
+            showLoading();
+            
+            // Get low risk products using the new API endpoint
+            const response = await fetch(`${API_BASE_URL}/low-risk-products?limit=10`);
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                // Transform the data to match our expected format
+                const lowRiskProducts = data.data.map(product => {
+                    return {
+                        ...product,
+                        holder: null,
+                        manufacturer: null,
+                        substance_detected: null,
+                        riskLevel: 'low',
+                        approvalStatus: 'compliant_pending',
+                        harmfulSubstances: [],
+                        riskExplanation: 'No known harmful substances detected, but other risks may exist. Compliance verification pending.',
+                        approvalReason: 'Compliant pending verification - No known harmful substances detected, but comprehensive safety assessment may be required.'
+                    };
+                });
+                
+                // Enrich the product data
+                const enrichedProducts = lowRiskProducts.map(product => enrichProductData(product));
+                
+                displaySearchResults(enrichedProducts, `Low Risk Products - Sample (${enrichedProducts.length} of 192,441)`, false);
+                showMessage(`Showing first ${enrichedProducts.length} low risk products from the database.`, 'info');
+            } else {
+                throw new Error('Failed to load low risk products');
+            }
+            
+        } catch (error) {
+            console.error('Error loading low risk products:', error);
+            
+            // Fallback: show statistics only
+            searchResults.innerHTML = `
+                <div class="filter-results">
+                    <div class="results-header">
+                        <h3>Low Risk Products - Sample Unavailable</h3>
+>>>>>>> 89a4d49 (upload project files)
                     </div>
                     <div class="compliant-pending-count">
                         <div class="count-display">
                             <div class="count-icon">✅</div>
                             <div class="count-info">
+<<<<<<< HEAD
                                 <h2 class="product-count">${lowRiskCount.toLocaleString()}</h2>
                                 <p class="count-label">Low Risk Products</p>
                             </div>
@@ -460,10 +545,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <li>Apply additional <strong>ingredient filters</strong> for more specific results</li>
                                 <li>Consider consulting healthcare professionals for personalized advice</li>
                             </ul>
+=======
+                                <h2 class="product-count">192,441</h2>
+                                <p class="count-label">Low Risk Products</p>
+                            </div>
+                        </div>
+                        <div class="compliance-explanation">
+                            <p>❌ Unable to load sample products. Please try using the search function instead.</p>
+                            <p><strong>Error:</strong> ${error.message}</p>
+>>>>>>> 89a4d49 (upload project files)
                         </div>
                     </div>
                 </div>
             `;
+<<<<<<< HEAD
             
             showMessage(`Found ${lowRiskCount.toLocaleString()} low risk products in the database.`, 'info');
             
@@ -491,6 +586,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             showMessage('Showing estimated count. Use search for specific products.', 'warning');
+=======
+            showMessage('Failed to load sample products. Try searching for specific products.', 'error');
+        } finally {
+            hideLoading();
+>>>>>>> 89a4d49 (upload project files)
         }
     }
     
@@ -783,8 +883,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const riskIcon = product.riskLevel === 'high' ? '⚠️' : 
                         product.riskLevel === 'medium' ? '⚡' : '✅';
         
+<<<<<<< HEAD
         // Generate compliant product recommendations only if showRecommendations is true
         const compliantProducts = showRecommendations ? generateCompliantRecommendations(product) : [];
+=======
+        // Generate compliant product recommendations only if showRecommendations is true AND product is not already safe
+        const isSafeProduct = product.riskLevel === 'low' && product.approvalStatus === 'compliant_pending';
+        const compliantProducts = (showRecommendations && !isSafeProduct) ? generateCompliantRecommendations(product) : [];
+>>>>>>> 89a4d49 (upload project files)
         
         return `
             <div class="product-card-container" data-product-id="${product.notif_no}">
@@ -832,6 +938,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <button class="view-details-btn">View Details</button>
                 </div>
                 
+<<<<<<< HEAD
                 ${showRecommendations && compliantProducts.length > 0 ? `
                     <div class="inline-recommendations">
                         <h4 class="recommendations-title">✅ Recommended Safe Alternatives</h4>
@@ -856,6 +963,42 @@ document.addEventListener('DOMContentLoaded', function() {
                         ` : ''}
                     </div>
                 ` : ''}
+=======
+                ${showRecommendations ? (
+                    isSafeProduct ? `
+                        <div class="safe-product-notice">
+                            <h4 class="safe-notice-title">✅ This Product is Already Safe</h4>
+                            <div class="safe-notice-content">
+                                <p>🎉 <strong>Good news!</strong> This product has been classified as low risk with no known harmful substances detected.</p>
+                                <p>💡 <strong>No alternatives needed</strong> - you can use this product with confidence, though comprehensive safety verification may still be required.</p>
+                            </div>
+                        </div>
+                    ` : (compliantProducts.length > 0 ? `
+                        <div class="inline-recommendations">
+                            <h4 class="recommendations-title">✅ Recommended Safe Alternatives</h4>
+                            <div class="recommendations-grid-inline">
+                                ${compliantProducts.slice(0, 2).map(rec => `
+                                    <div class="recommendation-card-inline">
+                                        <div class="rec-product-name">${rec.name}</div>
+                                        <div class="rec-meta"><strong>Company:</strong> ${rec.company}</div>
+                                        <div class="rec-meta"><strong>Notification:</strong> ${rec.notif_no}</div>
+                                        <div class="status-badge compliant-pending">
+                                            <span class="status-icon">⏳</span>
+                                            <span>COMPLIANT PENDING</span>
+                                        </div>
+                                        <p class="rec-reason">${rec.reason}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${compliantProducts.length > 2 ? `
+                                <button class="show-more-recommendations" onclick="showMoreRecommendations('${product.notif_no}')">
+                                    Show ${compliantProducts.length - 2} More Alternatives
+                                </button>
+                            ` : ''}
+                        </div>
+                    ` : '')
+                ) : ''}
+>>>>>>> 89a4d49 (upload project files)
             </div>
         `;
     }
@@ -881,8 +1024,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const riskIcon = product.riskLevel === 'high' ? '⚠️' : 
                         product.riskLevel === 'medium' ? '⚡' : '✅';
         
+<<<<<<< HEAD
         // Generate compliant product recommendations only if showRecommendations is true
         const compliantProducts = showRecommendations ? generateCompliantRecommendations(product) : [];
+=======
+        // Generate compliant product recommendations only if showRecommendations is true AND product is not already safe
+        const isSafeProduct = product.riskLevel === 'low' && product.approvalStatus === 'compliant_pending';
+        const compliantProducts = (showRecommendations && !isSafeProduct) ? generateCompliantRecommendations(product) : [];
+>>>>>>> 89a4d49 (upload project files)
         
         const detailsHtml = `
             <div class="product-detail-header">
@@ -966,6 +1115,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             ` : ''}
             
+<<<<<<< HEAD
             ${showRecommendations && compliantProducts.length > 0 ? `
                 <div class="recommendations-section">
                     <h3 class="section-title">✅ Compliant Product Recommendations</h3>
@@ -986,12 +1136,58 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             ` : !showRecommendations ? `
+=======
+            ${showRecommendations ? (
+                isSafeProduct ? `
+                    <div class="safe-product-section">
+                        <h3 class="section-title">✅ Product Safety Confirmation</h3>
+                        <div class="safe-product-details">
+                            <div class="safety-confirmation">
+                                <h4>🎉 This Product is Already Safe!</h4>
+                                <p>This product has been classified as <strong>low risk</strong> with <strong>no known harmful substances detected</strong>.</p>
+                                <ul style="margin: 15px 0; padding-left: 20px;">
+                                    <li>✅ No harmful chemicals found</li>
+                                    <li>✅ Compliant with safety regulations</li>
+                                    <li>✅ Safe for consumer use</li>
+                                </ul>
+                                <p style="margin-top: 15px; color: #666; font-style: italic;">
+                                    <strong>Note:</strong> While this product is classified as safe, comprehensive safety verification may still be required as part of regulatory compliance.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                ` : (compliantProducts.length > 0 ? `
+                    <div class="recommendations-section">
+                        <h3 class="section-title">✅ Compliant Product Recommendations</h3>
+                        <p style="margin-bottom: 20px; color: #666;">Based on similar companies and product types, here are compliant alternatives:</p>
+                        <div class="recommendation-grid">
+                            ${compliantProducts.map(rec => `
+                                <div class="recommendation-card">
+                                    <div class="rec-product-name">${rec.name}</div>
+                                    <div class="rec-meta"><strong>Company:</strong> ${rec.company}</div>
+                                    <div class="rec-meta"><strong>Notification:</strong> ${rec.notif_no}</div>
+                                    <div class="status-badge compliant-pending" style="margin: 10px 0;">
+                                        <span class="status-icon">⏳</span>
+                                        <span>COMPLIANT PENDING</span>
+                                    </div>
+                                    <p style="font-size: 0.9rem; color: #666;">${rec.reason}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : '')
+            ) : `
+>>>>>>> 89a4d49 (upload project files)
                 <div class="detail-note">
                     <p style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; color: #666; font-style: italic;">
                         💡 <strong>Tip:</strong> Safe product recommendations are displayed below the main product information in the search results for your convenience.
                     </p>
                 </div>
+<<<<<<< HEAD
             ` : ''}
+=======
+            `}
+>>>>>>> 89a4d49 (upload project files)
         `;
         
         productDetails.innerHTML = detailsHtml;
@@ -1061,11 +1257,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h3>No record found</h3>
                 <p>No products found for "${searchTerm}". Please try:</p>
                 <ul style="text-align: left; margin-top: 15px;">
+<<<<<<< HEAD
                     <li>Check spelling and try again</li>
                     <li>Use different search terms</li>
                     <li>Try searching by notification number instead</li>
                     <li>Use the filters to browse available products</li>
                 </ul>
+=======
+                    <li><strong>Partial word matching:</strong> Try searching for just one word from the product name</li>
+                    <li><strong>Multiple keywords:</strong> Use space-separated words (e.g., "La Maison" or "Argan Soap")</li>
+                    <li><strong>Brand names:</strong> Search by company or manufacturer name</li>
+                    <li><strong>Check spelling:</strong> Verify the spelling and try again</li>
+                    <li><strong>Alternative search:</strong> Try searching by notification number instead</li>
+                    <li><strong>Browse:</strong> Use the filters to browse available products</li>
+                </ul>
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; color: #666;">
+                    <h4>💡 Search Examples:</h4>
+                    <p>For "La Maison Du Savon De Marseille 100g Argan Oil Soap - Violette (Purple)", you can search for:</p>
+                    <ul>
+                        <li>"La Maison" - brand name</li>
+                        <li>"Argan Oil" - ingredient</li>
+                        <li>"Violette" - product variant</li>
+                        <li>"Marseille Soap" - product type</li>
+                    </ul>
+                </div>
+>>>>>>> 89a4d49 (upload project files)
             </div>
         `;
     }

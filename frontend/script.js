@@ -175,7 +175,11 @@ function switchTab(mode) {
 
 function updateSearchPlaceholder() {
     const placeholders = {
+<<<<<<< HEAD
         'name': 'Enter product name (e.g., DELUXE, YANKO)...',
+=======
+        'name': 'Enter any word from product name (e.g., "La Maison", "Argan Oil", "Violette")...',
+>>>>>>> 89a4d49 (upload project files)
         'notification': 'Enter notification number (e.g., NOT200603276K)...'
     };
     searchInput.placeholder = placeholders[currentSearchMode];
@@ -195,6 +199,10 @@ async function performSearch() {
         let endpoint;
         if (currentSearchMode === 'name') {
             endpoint = `${API_BASE_URL}/search/product?q=${encodeURIComponent(query)}`;
+<<<<<<< HEAD
+=======
+            console.log('🔍 Searching for product with term:', query);
+>>>>>>> 89a4d49 (upload project files)
         } else {
             endpoint = `${API_BASE_URL}/search/notification?notif_no=${encodeURIComponent(query)}`;
         }
@@ -205,6 +213,25 @@ async function performSearch() {
         if (data.success) {
             currentResults = data.data;
             displayResults(currentResults);
+<<<<<<< HEAD
+=======
+            
+            // Show helpful message about the improved search
+            if (currentSearchMode === 'name' && data.data.length > 0) {
+                if (query.includes(' ') || query.includes('-') || query.includes(',')) {
+                    showNotification(`Found ${data.data.length} products. You can now search for any word from the product name!`, 'success');
+                } else {
+                    showNotification(`Found ${data.data.length} products matching "${query}".`, 'success');
+                }
+                
+                if (data.keywords) {
+                    console.log('🔑 Keywords used:', data.keywords);
+                }
+                if (data.breakdown) {
+                    console.log(`📊 Results breakdown: ${data.breakdown.cancelled} cancelled, ${data.breakdown.approved} approved`);
+                }
+            }
+>>>>>>> 89a4d49 (upload project files)
         } else {
             throw new Error(data.message || 'Search failed');
         }

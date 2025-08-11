@@ -8,16 +8,26 @@ app.use(express.json());
 
 // 数据库连接配置
 const db = mysql.createPool({
+<<<<<<< HEAD
     host: '8.138.219.192',
     user: 'testmysql', // 更新为正确的用户名
     password: '5b5dc2099d696f50',
     database: 'testmysql',
+=======
+    host: 'localhost',
+    user: 'root',
+    password: 'root',
+    database: 'pet',
+>>>>>>> 89a4d49 (upload project files)
     acquireTimeout: 60000,
     timeout: 60000,
     reconnect: true
 });
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 89a4d49 (upload project files)
 // 测试数据库连接
 db.getConnection((err, connection) => {
     if (err) {
@@ -26,6 +36,27 @@ db.getConnection((err, connection) => {
         console.log('✅ 数据库连接成功！');
         console.log('📊 连接到数据库: pet');
         console.log('📋 表名: cosmetic_notifications_cancelled');
+<<<<<<< HEAD
+=======
+        
+        // 检查表结构
+        db.query('DESCRIBE cosmetic_notifications_cancelled', (err, structure) => {
+            if (err) {
+                console.error('❌ 获取表结构失败:', err);
+            } else {
+                console.log('📋 cancelled表字段:', structure.map(col => col.Field));
+            }
+        });
+        
+        db.query('DESCRIBE cosmetic_notifications', (err, structure) => {
+            if (err) {
+                console.error('❌ 获取表结构失败:', err);
+            } else {
+                console.log('📋 notifications表字段:', structure.map(col => col.Field));
+            }
+        });
+        
+>>>>>>> 89a4d49 (upload project files)
         connection.release();
     }
 });
@@ -52,6 +83,63 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+<<<<<<< HEAD
+=======
+// 数据诊断接口
+app.get('/api/debug/search', (req, res) => {
+    const searchTerm = req.query.q || 'La Maison';
+    
+    console.log(`🔍 Debug search for: "${searchTerm}"`);
+    
+    // 测试cancelled表
+    const cancelledQuery = 'SELECT * FROM cosmetic_notifications_cancelled WHERE product LIKE ? LIMIT 3';
+    db.query(cancelledQuery, [`%${searchTerm}%`], (err1, cancelledResults) => {
+        if (err1) {
+            console.error('❌ Cancelled table error:', err1);
+        } else {
+            console.log(`📊 Cancelled table: found ${cancelledResults.length} results`);
+        }
+        
+        // 测试notifications表
+        const notificationsQuery = 'SELECT * FROM cosmetic_notifications WHERE product LIKE ? LIMIT 3';
+        db.query(notificationsQuery, [`%${searchTerm}%`], (err2, notificationsResults) => {
+            if (err2) {
+                console.error('❌ Notifications table error:', err2);
+            } else {
+                console.log(`📊 Notifications table: found ${notificationsResults.length} results`);
+            }
+            
+            // 测试表结构
+            db.query('DESCRIBE cosmetic_notifications_cancelled', (err3, cancelledStructure) => {
+                db.query('DESCRIBE cosmetic_notifications', (err4, notificationsStructure) => {
+                    res.json({
+                        success: true,
+                        searchTerm: searchTerm,
+                        results: {
+                            cancelled: {
+                                count: cancelledResults ? cancelledResults.length : 0,
+                                data: cancelledResults || [],
+                                error: err1 ? err1.message : null
+                            },
+                            notifications: {
+                                count: notificationsResults ? notificationsResults.length : 0,
+                                data: notificationsResults || [],
+                                error: err2 ? err2.message : null
+                            }
+                        },
+                        tableStructures: {
+                            cancelled: cancelledStructure ? cancelledStructure.map(col => col.Field) : null,
+                            notifications: notificationsStructure ? notificationsStructure.map(col => col.Field) : null
+                        },
+                        timestamp: new Date().toISOString()
+                    });
+                });
+            });
+        });
+    });
+});
+
+>>>>>>> 89a4d49 (upload project files)
 // 获取所有被取消的化妆品通知（连接两张表）
 app.get('/api/cosmetic_notifications_cancelled', (req, res) => {
     const limit = req.query.limit || 50; // 默认返回50条记录
@@ -91,7 +179,11 @@ app.get('/api/cosmetic_notifications_cancelled', (req, res) => {
     });
 });
 
+<<<<<<< HEAD
 // 按产品名称搜索（连接两张表）
+=======
+// 按产品名称搜索（连接两张表）- 支持部分词匹配
+>>>>>>> 89a4d49 (upload project files)
 app.get('/api/search/product', (req, res) => {
     const searchTerm = req.query.q;
     
@@ -103,7 +195,64 @@ app.get('/api/search/product', (req, res) => {
         });
     }
     
+<<<<<<< HEAD
     const query = `
+=======
+    // 将搜索词分割成多个关键词，支持空格、逗号、连字符分隔
+    const keywords = searchTerm.trim()
+        .replace(/[,\-_]/g, ' ')  // 将逗号、连字符、下划线替换为空格
+        .split(/\s+/)             // 按空格分割
+        .filter(word => word.length > 0)  // 过滤空词
+        .map(word => word.trim());        // 去除首尾空格
+    
+    console.log('🔍 Search keywords:', keywords);
+    
+    if (keywords.length === 0) {
+        return res.status(400).json({
+            success: false,
+            error: 'Invalid search term',
+            message: 'Please provide valid search keywords'
+        });
+    }
+    
+    // 构建动态查询条件 - 每个关键词都要在产品名称、持有者或公司名称中找到
+    let whereConditions = [];
+    let queryParams = [];
+    
+    // 为每个关键词创建OR条件（在product, holder, company中任一匹配即可）
+    keywords.forEach(keyword => {
+        whereConditions.push(`(
+            cancelled.product LIKE ? OR 
+            cancelled.holder LIKE ? OR 
+            cancelled.manufacturer LIKE ? OR
+            notifications.company LIKE ?
+        )`);
+        // 为每个字段添加参数
+        const likePattern = `%${keyword}%`;
+        queryParams.push(likePattern, likePattern, likePattern, likePattern);
+    });
+    
+    // 使用AND连接所有关键词条件，确保所有关键词都匹配
+    const whereClause = whereConditions.join(' AND ');
+    
+    // 构建notifications表的搜索条件
+    let notificationsWhereConditions = [];
+    let notificationsParams = [];
+    
+    keywords.forEach(keyword => {
+        notificationsWhereConditions.push(`(
+            notifications.product LIKE ? OR 
+            notifications.company LIKE ?
+        )`);
+        const likePattern = `%${keyword}%`;
+        notificationsParams.push(likePattern, likePattern);
+    });
+    
+    const notificationsWhereClause = notificationsWhereConditions.join(' AND ');
+    
+    // 1) 先查 cancelled 表
+    const cancelledQuery = `
+>>>>>>> 89a4d49 (upload project files)
         SELECT 
             cancelled.notif_no,
             cancelled.product,
@@ -111,6 +260,7 @@ app.get('/api/search/product', (req, res) => {
             cancelled.manufacturer,
             cancelled.substance_detected,
             notifications.company,
+<<<<<<< HEAD
             notifications.date_notif
         FROM cosmetic_notifications_cancelled cancelled
         LEFT JOIN cosmetic_notifications notifications 
@@ -141,6 +291,147 @@ app.get('/api/search/product', (req, res) => {
             }
         }
     );
+=======
+            notifications.date_notif,
+            'cancelled' as status
+        FROM cosmetic_notifications_cancelled cancelled
+        LEFT JOIN cosmetic_notifications notifications 
+        ON cancelled.notif_no = notifications.notif_no
+        WHERE ${whereClause}
+        LIMIT 5
+    `;
+
+    // 2) 再查 notifications 表（严格：排除已取消）
+    const notificationsQueryStrict = `
+        SELECT 
+            notifications.notif_no,
+            notifications.product,
+            NULL as holder,
+            NULL as manufacturer,
+            NULL as substance_detected,
+            notifications.company,
+            notifications.date_notif,
+            'approved' as status
+        FROM cosmetic_notifications notifications
+        WHERE notifications.notif_no NOT IN (
+            SELECT notif_no FROM cosmetic_notifications_cancelled 
+            WHERE notif_no IS NOT NULL
+        )
+        AND ${notificationsWhereClause}
+        LIMIT 5
+    `;
+
+    // 3) 如果严格查询无结果，则回退为不排除（尽量给出结果）
+    const notificationsQueryRelaxed = `
+        SELECT 
+            notifications.notif_no,
+            notifications.product,
+            NULL as holder,
+            NULL as manufacturer,
+            NULL as substance_detected,
+            notifications.company,
+            notifications.date_notif,
+            'approved' as status
+        FROM cosmetic_notifications notifications
+        WHERE ${notificationsWhereClause}
+        LIMIT 5
+    `;
+
+    console.log('🔍 Keywords:', keywords);
+    console.log('🔍 Cancelled WHERE:', whereClause);
+    console.log('🔍 Notifications WHERE:', notificationsWhereClause);
+
+    console.log('🔍 Cancelled query params:', queryParams);
+    console.log('🔍 Notifications query params:', notificationsParams);
+    
+    db.query(cancelledQuery, queryParams, (err1, cancelledRows) => {
+        if (err1) {
+            console.error('Cancelled search error:', err1);
+            return res.status(500).json({ success: false, error: 'Cancelled search failed', message: err1.message });
+        }
+        
+        console.log(`📊 Cancelled search found: ${cancelledRows.length} results`);
+
+        db.query(notificationsQueryStrict, notificationsParams, (err2, notifRowsStrict) => {
+            if (err2) {
+                console.error('Notifications search error (strict):', err2);
+                // 即使严格报错，也尝试宽松
+                db.query(notificationsQueryRelaxed, notificationsParams, (err3, notifRowsRelaxed) => {
+                    const combined = [...cancelledRows, ...(notifRowsRelaxed || [])];
+                    const dedup = Array.from(new Map(combined.map(r => [r.notif_no, r])).values());
+                    const limited = dedup.slice(0, 5);
+                    const cancelledCount = limited.filter(r => r.status === 'cancelled').length;
+                    const approvedCount = limited.filter(r => r.status === 'approved').length;
+                    return res.json({
+                        success: true,
+                        data: limited,
+                        searchTerm,
+                        keywords,
+                        total: limited.length,
+                        breakdown: { cancelled: cancelledCount, approved: approvedCount },
+                        mode: 'relaxed-after-error',
+                        timestamp: new Date().toISOString()
+                    });
+                });
+                return;
+            }
+
+            if (notifRowsStrict && notifRowsStrict.length > 0) {
+                const combined = [...cancelledRows, ...notifRowsStrict];
+                const dedup = Array.from(new Map(combined.map(r => [r.notif_no, r])).values());
+                const limited = dedup.slice(0, 5);
+                const cancelledCount = limited.filter(r => r.status === 'cancelled').length;
+                const approvedCount = limited.filter(r => r.status === 'approved').length;
+                return res.json({
+                    success: true,
+                    data: limited,
+                    searchTerm,
+                    keywords,
+                    total: limited.length,
+                    breakdown: { cancelled: cancelledCount, approved: approvedCount },
+                    mode: 'strict',
+                    timestamp: new Date().toISOString()
+                });
+            }
+
+            // 严格无结果 -> 宽松再试
+            db.query(notificationsQueryRelaxed, notificationsParams, (err3, notifRowsRelaxed) => {
+                if (err3) {
+                    console.error('Notifications search error (relaxed):', err3);
+                    const limitedCancelled = (cancelledRows || []).slice(0, 5);
+                    const cancelledCount = limitedCancelled.filter(r => r.status === 'cancelled').length;
+                    const approvedCount = limitedCancelled.filter(r => r.status === 'approved').length;
+                    return res.json({
+                        success: true,
+                        data: limitedCancelled,
+                        searchTerm,
+                        keywords,
+                        total: limitedCancelled.length,
+                        breakdown: { cancelled: cancelledCount, approved: approvedCount },
+                        mode: 'cancelled-only',
+                        timestamp: new Date().toISOString()
+                    });
+                }
+
+                const combined = [...cancelledRows, ...(notifRowsRelaxed || [])];
+                const dedup = Array.from(new Map(combined.map(r => [r.notif_no, r])).values());
+                const limited = dedup.slice(0, 5);
+                const cancelledCount = limited.filter(r => r.status === 'cancelled').length;
+                const approvedCount = limited.filter(r => r.status === 'approved').length;
+                return res.json({
+                    success: true,
+                    data: limited,
+                    searchTerm,
+                    keywords,
+                    total: limited.length,
+                    breakdown: { cancelled: cancelledCount, approved: approvedCount },
+                    mode: 'relaxed',
+                    timestamp: new Date().toISOString()
+                });
+            });
+        });
+    });
+>>>>>>> 89a4d49 (upload project files)
 });
 
 // 按通知号搜索（搜索两张表）
@@ -260,6 +551,54 @@ app.get('/api/cosmetic_notifications', (req, res) => {
     );
 });
 
+<<<<<<< HEAD
+=======
+// 获取低风险产品（从notifications表中排除cancelled表的产品）
+app.get('/api/low-risk-products', (req, res) => {
+    const limit = req.query.limit || 10;
+    const offset = req.query.offset || 0;
+    
+    const query = `
+        SELECT 
+            notifications.notif_no,
+            notifications.product,
+            notifications.company,
+            notifications.date_notif,
+            'approved' as status
+        FROM cosmetic_notifications notifications
+        WHERE notifications.notif_no NOT IN (
+            SELECT notif_no FROM cosmetic_notifications_cancelled 
+            WHERE notif_no IS NOT NULL
+        )
+        ORDER BY notifications.date_notif DESC
+        LIMIT ${limit} OFFSET ${offset}
+    `;
+    
+    console.log(`🔍 Getting low risk products: limit=${limit}, offset=${offset}`);
+    
+    db.query(query, (err, result) => {
+        if (err) {
+            console.error('低风险产品查询错误:', err);
+            res.status(500).json({
+                success: false,
+                error: 'Low risk products query failed',
+                message: err.message
+            });
+        } else {
+            console.log(`✅ Found ${result.length} low risk products`);
+            res.json({
+                success: true,
+                data: result,
+                total: result.length,
+                limit: limit,
+                offset: offset,
+                timestamp: new Date().toISOString()
+            });
+        }
+    });
+});
+
+>>>>>>> 89a4d49 (upload project files)
 // 测试两表连接查询
 app.get('/api/test/join', (req, res) => {
     const query = `
@@ -300,6 +639,56 @@ app.get('/api/test/join', (req, res) => {
     });
 });
 
+<<<<<<< HEAD
+=======
+// 测试notifications表搜索
+app.get('/api/test/notifications-search', (req, res) => {
+    const searchTerm = req.query.q || 'Daisy';
+    
+    const query = `
+        SELECT 
+            notifications.notif_no,
+            notifications.product,
+            notifications.company,
+            notifications.date_notif
+        FROM cosmetic_notifications notifications
+        WHERE notifications.notif_no NOT IN (
+            SELECT notif_no FROM cosmetic_notifications_cancelled 
+            WHERE notif_no IS NOT NULL
+        )
+        AND (notifications.product LIKE ? OR notifications.company LIKE ?)
+        LIMIT 10
+    `;
+    
+    const params = [`%${searchTerm}%`, `%${searchTerm}%`];
+    
+    console.log('🧪 Testing notifications table search for:', searchTerm);
+    console.log('🧪 Query:', query);
+    console.log('🧪 Parameters:', params);
+    
+    db.query(query, params, (err, result) => {
+        if (err) {
+            console.error('Notifications search test error:', err);
+            res.status(500).json({
+                success: false,
+                error: 'Notifications search test failed',
+                message: err.message
+            });
+        } else {
+            console.log(`🧪 Notifications search test: found ${result.length} results`);
+            res.json({
+                success: true,
+                data: result,
+                searchTerm: searchTerm,
+                total: result.length,
+                message: 'Notifications search test completed',
+                timestamp: new Date().toISOString()
+            });
+        }
+    });
+});
+
+>>>>>>> 89a4d49 (upload project files)
 // 获取筛选统计信息（只返回数量，不返回具体数据）
 app.get('/api/filter/statistics', (req, res) => {
     const queries = [
@@ -477,6 +866,7 @@ app.get('/', (req, res) => {
 });
 
 // 启动服务器
+<<<<<<< HEAD
 app.listen(8000, '0.0.0.0', () => {
     console.log('');
     console.log('🚀 ===== 服务器启动成功 =====');
@@ -489,5 +879,22 @@ app.listen(8000, '0.0.0.0', () => {
     console.log('📈 筛选统计: http://8.138.219.192:8000/api/filter/statistics');
     console.log('📊 制造商统计: http://8.138.219.192:8000/api/manufacturer/statistics');
     console.log('🔗 测试表连接: http://8.138.219.192:8000/api/test/join');
+=======
+app.listen(8000, () => {
+    console.log('');
+    console.log('🚀 ===== 服务器启动成功 =====');
+    console.log('📡 服务器地址: http://localhost:8000');
+    console.log('🏥 健康检查: http://localhost:8000/api/health');
+    console.log('📊 获取取消数据: http://localhost:8000/api/cosmetic_notifications_cancelled');
+    console.log('📋 获取通知数据: http://localhost:8000/api/cosmetic_notifications');
+    console.log('✅ 获取低风险产品: http://localhost:8000/api/low-risk-products?limit=10');
+    console.log('🔍 搜索产品: http://localhost:8000/api/search/product?q=DELUXE');
+    console.log('🔢 搜索通知号: http://localhost:8000/api/search/notification?notif_no=NOT200603276K');
+    console.log('📈 筛选统计: http://localhost:8000/api/filter/statistics');
+    console.log('📊 制造商统计: http://localhost:8000/api/manufacturer/statistics');
+    console.log('🔗 测试表连接: http://localhost:8000/api/test/join');
+    console.log('🐛 搜索调试: http://localhost:8000/api/debug/search?q=La%20Maison');
+    console.log('🧪 Notifications测试: http://localhost:8000/api/test/notifications-search?q=Daisy');
+>>>>>>> 89a4d49 (upload project files)
     console.log('===============================');
 });
